@@ -74,9 +74,9 @@ Each question command marks its mandatory flags `[required]` in `--help`
 `--options`; `batch` needs `--state` plus at least one question flag;
 `ask` needs `--state --questions`. Everything else is optional.
 
-For AI agents, see [SKILL.md](SKILL.md) — an installable Agent skill with the
-full command/flag/exit-code contract and copy-paste examples — or run
-`sysone agent-help` for the same contract as JSON.
+For AI agents, use the Agent skill at [skills/sysone/](skills/sysone/)
+(agentskills.io format) — it teaches when to use the CLI and points to
+`sysone agent-help` / `sysone <cmd> --help` for the full contract.
 
 ### Threshold guidance (TypeSafe patterns)
 
