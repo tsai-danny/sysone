@@ -168,7 +168,7 @@ func (c *Client) Ask(ctx context.Context, state any, questions map[string]Questi
 // ask is the shared implementation used by the builder as well.
 func (c *Client) ask(ctx context.Context, model string, state any, images []string, questions map[string]Question) (*Response, error) {
 	if len(questions) == 0 {
-		return nil, fmt.Errorf("%w\nHint: add at least one question, e.g. AddNoul(\"ok\", \"Did the step succeed?\", 0.8, &ok)", ErrNoQuestions)
+		return nil, fmt.Errorf("%w\nHint: add at least one question, e.g. AddNoul(sysone.NoulQ{ID: \"ok\", Instructions: \"Did the step succeed?\", Threshold: 0.8})", ErrNoQuestions)
 	}
 	if isEmptyState(state) {
 		return nil, invalid("state is required and must not be empty",

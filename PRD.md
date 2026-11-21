@@ -115,25 +115,26 @@ func (c *Client) Ask(ctx context.Context, state any, questions map[string]Questi
 
 ### 5.2 Step Builder（核心防呆）
 
-Go 方法不支援獨立泛型參數，採「階段介面 + 指標綁定」：
+Go 方法不支援獨立泛型參數，採「階段介面 + 具名欄位結構字面量」：
 
 ```go
 ans, err := client.Decide().
     WithTextState("Customer message: charged twice...").   // 或 WithJSONState(v) / WithImageState(path|dataURL) / WithMessages(msgs)
-    AddChoice("route", "Which team?", map[string]string{   // 選項+描述
-        "billing": "payments, refunds", "technical": "bugs",
-    }, &route).                                             // *string → 勝出選項
-    AddNoul("angry", "Is the customer angry?", 0.8, &isAngry). // *bool，threshold 判定
-    AddScore("urgency", "How urgent?", []string{"can wait","this week","today","right now"}, &urgency). // *float64 期望分
+    AddChoice(sysone.ChoiceQ{                              // 選項+描述
+        ID: "route", Instructions: "Which team?",
+        Options: []sysone.Option{{Key: "billing", Description: "payments, refunds"}},
+    }).
+    AddNoul(sysone.NoulQ{ID: "angry", Instructions: "Is the customer angry?", Threshold: 0.8}).
+    AddScore(sysone.ScoreQ{ID: "urgency", Instructions: "How urgent?", Levels: []string{"can wait","this week","today","right now"}}).
     Execute(ctx)
-// ans 為完整 RawResponse；route/isAngry/urgency 已自動填入
+// ans 為完整 Response；以 ans.Choice("route") / ans.Noul("angry") / ans.Score("urgency") 讀取
 ```
 
 規則：
 - **命名對齊 TypeSafe 官方 SDK**：題型型別 `Choice` / `Score` / `Noul`，欄位 `Instructions` / `Criteria` / `Confidence` / `Probabilities`，確保與官方 Python/TS SDK 及 wire JSON 語意一致
 - 階段強制順序：`Decide() → StateStep → QuestionStep → Execute`；無問題時 `Execute` 回 `ErrNoQuestions`（本地攔截，不發請求）
 - 本地驗證（發出前）：score 等級 2–10、choice 選項非空、state 非空 → 回 `ErrInvalidRequest` 包裝錯誤，訊息含修正建議
-- 每個 `Add*` 亦可選擇不綁指標，改由 `ans.Choice("route")` / `ans.Noul("angry")` / `ans.Score("urgency")` 查詢
+- 每個問題是具名欄位結構字面量（`ChoiceQ` / `ScoreQ` / `NoulQ`），呼叫處不需猜測位置參數；答案一律由 `ans.Choice("route")` / `ans.Noul("angry")` / `ans.Score("urgency")` 查詢
 - 圖片：`WithImageState` 接受本機路徑或 data URL，自動轉 base64；多圖 `WithImages(...)`
 - 冪等純函數語意：同一 builder 不可併發復用（文件註明）
 
@@ -158,7 +159,7 @@ type Response struct {
     Latency time.Duration  // 客戶端量測
 }
 ```
-- 自訂 threshold：`AddNoul(..., threshold, target)`；`AddChoice` 可選 `WithMinConfidence(c)` 選項 → 低於門檻時 `Passed=false` 且 target 不填（或填 fallback，見 Open Questions）
+- 自訂 threshold：`NoulQ.Threshold`（≤0 用預設 0.5）；`ChoiceQ.MinConfidence` → 低於門檻時 `Passed=false`（建議：保持零值 + `Passed=false`）
 
 ### 5.4 錯誤模型
 
@@ -294,13 +295,13 @@ sysone agent-help        # 輸出精簡 JSON 規格 + 3 個範例（給 Agent sk
 | 里程碑 | 內容 | 驗收 |
 |---|---|---|
 | M1 | Module：client + 契約型別 + 錯誤模型 + httptest 測試 | `go test ./...` 全綠；契約對照 systemone_api.md 逐條核對 |
-| M2 | Module：Step Builder + 指標綁定 + threshold + 圖片 | Example tests 通過；builder 階段編譯期防呆示範 |
+| M2 | Module：Step Builder + 具名欄位結構字面量 + threshold + 圖片 | Example tests 通過；builder 階段編譯期防呆示範 |
 | M3 | CLI：noul/choice/score/batch + JSON 輸出 + exit codes | 對本機 llama-server（Julia-1/Kev-4B）端到端通過；錯誤路徑 stderr 檢查 |
 | M4 | CLI：health/models/props/agent-help/ask + 安裝文件 + README + **SKILL.md**（Agent skill 格式，參照 TypeSafe skills 分發做法）+ README 引用官方 patterns（confidence-routing / companion-noul / noul-screen）作 threshold 建議 | `sysone agent-help` 輸出可被 Agent 一次成功率 ≥ 95%（抽測 20 指令） |
 
 ## 10. 開放問題（待產品決策）
 
-1. `AddChoice` 低於 confidence 門檻時：target 填 fallback 值、保持零值、還是回 sentinel error？（建議：保持零值 + `Passed=false`）
+1. ~~`AddChoice` 低於 confidence 門檻時：target 填 fallback 值、保持零值、還是回 sentinel error？~~ **已決策**：無 target（指標綁定已移除，答案由 `ans.*` 讀取）；低於門檻時 `Passed=false`，答案值仍可讀
 2. `batch` 是否支援多 state 檔案批次（每檔一請求）？（建議 v1 不做）
 3. ~~是否需要 `sysone ask` 直接吃原始 questions JSON（逃生門）？~~ **已決策（v1.1）**：納入，M4 實作 `sysone ask --questions <json>`，對應 module `Ask()`（§5.1）
 4. Module 公開路徑與 repo 名稱（`github.com/<org>/systemone`？CLI repo 同 repo 或分離？）

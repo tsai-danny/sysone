@@ -20,16 +20,18 @@ func TestBuilder_FullChain(t *testing.T) {
 		w.Write([]byte(canonicalResponse))
 	})
 
-	var route string
-	var isAngry bool
-	var urgency float64
 	resp, err := c.Decide().
 		WithTextState("Customer message: I was charged twice.").
-		AddChoice("route", "Which team?", map[string]string{
-			"billing": "payments", "shipping": "delivery", "technical": "bugs",
-		}, &route).
-		AddNoul("angry", "Is the customer angry?", 0.8, &isAngry).
-		AddScore("urgency", "How urgent?", []string{"can wait", "this week", "today", "right now"}, &urgency).
+		AddChoice(ChoiceQ{
+			ID: "route", Instructions: "Which team?",
+			Options: []Option{
+				{Key: "billing", Description: "payments"},
+				{Key: "shipping", Description: "delivery"},
+				{Key: "technical", Description: "bugs"},
+			},
+		}).
+		AddNoul(NoulQ{ID: "angry", Instructions: "Is the customer angry?", Threshold: 0.8}).
+		AddScore(ScoreQ{ID: "urgency", Instructions: "How urgent?", Levels: []string{"can wait", "this week", "today", "right now"}}).
 		Execute(context.Background())
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
@@ -43,26 +45,18 @@ func TestBuilder_FullChain(t *testing.T) {
 		t.Errorf("questions = %d, want 3", len(got.Questions))
 	}
 
-	// Bound targets.
-	if route != "billing" {
-		t.Errorf("route = %q, want billing", route)
-	}
-	if !isAngry { // noul 0.8208 ≥ 0.8
-		t.Error("isAngry = false, want true (0.8208 ≥ 0.8)")
-	}
-	if urgency != 2.2821 {
-		t.Errorf("urgency = %v, want 2.2821", urgency)
-	}
-
-	// Query access on the typed response.
+	// Answers read from the response.
 	if resp.Choice("route") != "billing" {
-		t.Errorf("resp.Choice = %q", resp.Choice("route"))
+		t.Errorf("resp.Choice = %q, want billing", resp.Choice("route"))
 	}
 	if resp.Noul("angry") < 0.8 {
-		t.Errorf("resp.Noul(angry) = %v, want ≥ 0.8", resp.Noul("angry"))
+		t.Errorf("resp.Noul(angry) = %v, want ??0.8", resp.Noul("angry"))
 	}
-	if a := resp.Answers["angry"]; !a.Passed {
-		t.Error("angry.Passed = false, want true")
+	if a := resp.Answers["angry"]; !a.Passed { // noul 0.8208 ??0.8
+		t.Error("angry.Passed = false, want true (0.8208 ??0.8)")
+	}
+	if resp.Score("urgency") != 2.2821 {
+		t.Errorf("resp.Score(urgency) = %v, want 2.2821", resp.Score("urgency"))
 	}
 }
 
@@ -74,24 +68,23 @@ func TestBuilder_NoulThresholds(t *testing.T) {
 		w.Write([]byte(body))
 	})
 
-	var a, b, cc bool
-	_, err := c.Decide().
+	resp, err := c.Decide().
 		WithTextState("s").
-		AddNoul("a", "q", 0.8, &a).
-		AddNoul("b", "q", 0, &b). // default 0.5
-		AddNoul("c", "q", 0.4, &cc).
+		AddNoul(NoulQ{ID: "a", Instructions: "q", Threshold: 0.8}).
+		AddNoul(NoulQ{ID: "b", Instructions: "q"}). // default 0.5
+		AddNoul(NoulQ{ID: "c", Instructions: "q", Threshold: 0.4}).
 		Execute(context.Background())
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
-	if a {
-		t.Error("a: 0.42 ≥ 0.8 should fail")
+	if resp.Answers["a"].Passed {
+		t.Error("a: 0.42 ??0.8 should fail")
 	}
-	if b {
-		t.Error("b: 0.42 ≥ default 0.5 should fail")
+	if resp.Answers["b"].Passed {
+		t.Error("b: 0.42 ??default 0.5 should fail")
 	}
-	if !cc {
-		t.Error("c: 0.42 ≥ 0.4 should pass")
+	if !resp.Answers["c"].Passed {
+		t.Error("c: 0.42 ??0.4 should pass")
 	}
 }
 
@@ -102,17 +95,16 @@ func TestBuilder_MinConfidence(t *testing.T) {
 		w.Write([]byte(body))
 	})
 
-	var route string
 	resp, err := c.Decide().
 		WithTextState("s").
-		AddChoice("route", "q", map[string]string{"billing": "b", "shipping": "s"}, &route,
-			WithMinConfidence(0.6)).
+		AddChoice(ChoiceQ{
+			ID: "route", Instructions: "q",
+			Options:       []Option{{Key: "billing", Description: "b"}, {Key: "shipping", Description: "s"}},
+			MinConfidence: 0.6,
+		}).
 		Execute(context.Background())
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
-	}
-	if route != "" {
-		t.Errorf("route = %q, want zero (below min confidence)", route)
 	}
 	if resp.Answers["route"].Passed {
 		t.Error("Passed = true, want false below min confidence")
@@ -135,17 +127,17 @@ func TestBuilder_LocalValidation(t *testing.T) {
 		t.Errorf("no questions: err = %v", err)
 	}
 	// Empty state.
-	_, err = c.Decide().WithTextState("").AddNoul("a", "q", 0.5, nil).Execute(ctx)
+	_, err = c.Decide().WithTextState("").AddNoul(NoulQ{ID: "a", Instructions: "q", Threshold: 0.5}).Execute(ctx)
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Errorf("empty state: err = %v", err)
 	}
-	// Invalid question (empty choice criteria).
-	_, err = c.Decide().WithTextState("s").AddChoice("x", "q", map[string]string{}, nil).Execute(ctx)
+	// Invalid question (empty choice options).
+	_, err = c.Decide().WithTextState("s").AddChoice(ChoiceQ{ID: "x", Instructions: "q"}).Execute(ctx)
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Errorf("empty criteria: err = %v", err)
 	}
 	// Invalid question (score with 1 level).
-	_, err = c.Decide().WithTextState("s").AddScore("x", "q", []string{"only"}, nil).Execute(ctx)
+	_, err = c.Decide().WithTextState("s").AddScore(ScoreQ{ID: "x", Instructions: "q", Levels: []string{"only"}}).Execute(ctx)
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Errorf("one level: err = %v", err)
 	}
@@ -166,11 +158,10 @@ func TestBuilder_Images(t *testing.T) {
 	}
 	dataURL := "data:image/gif;base64,R0lGODdh"
 
-	var ok bool
 	_, err := c.Decide().
 		WithImages(png, dataURL).
 		WithTextState("Describe the screenshot.").
-		AddNoul("ok", "Is it a screenshot?", 0.5, &ok).
+		AddNoul(NoulQ{ID: "ok", Instructions: "Is it a screenshot?", Threshold: 0.5}).
 		Execute(context.Background())
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
@@ -199,7 +190,7 @@ func TestBuilder_ImageStateDefaultText(t *testing.T) {
 	})
 	_, err := c.Decide().
 		WithImageState("data:image/png;base64,AAAA").
-		AddNoul("ok", "q", 0.5, nil).
+		AddNoul(NoulQ{ID: "ok", Instructions: "q", Threshold: 0.5}).
 		Execute(context.Background())
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
@@ -215,7 +206,7 @@ func TestBuilder_ImageErrors(t *testing.T) {
 	})
 
 	// Missing file.
-	_, err := c.Decide().WithImageState("nope.png").AddNoul("ok", "q", 0.5, nil).Execute(context.Background())
+	_, err := c.Decide().WithImageState("nope.png").AddNoul(NoulQ{ID: "ok", Instructions: "q", Threshold: 0.5}).Execute(context.Background())
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Errorf("missing file: err = %v", err)
 	}
@@ -226,7 +217,7 @@ func TestBuilder_ImageErrors(t *testing.T) {
 	if err := os.WriteFile(txt, []byte("hi"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err = c.Decide().WithImageState(txt).AddNoul("ok", "q", 0.5, nil).Execute(context.Background())
+	_, err = c.Decide().WithImageState(txt).AddNoul(NoulQ{ID: "ok", Instructions: "q", Threshold: 0.5}).Execute(context.Background())
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Errorf("unknown ext: err = %v", err)
 	}
@@ -241,7 +232,7 @@ func TestBuilder_ImageErrors(t *testing.T) {
 	if err := os.WriteFile(png, []byte("1234567890"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err = c2.Decide().WithImageState(png).AddNoul("ok", "q", 0.5, nil).Execute(context.Background())
+	_, err = c2.Decide().WithImageState(png).AddNoul(NoulQ{ID: "ok", Instructions: "q", Threshold: 0.5}).Execute(context.Background())
 	if !errors.Is(err, ErrInvalidRequest) {
 		t.Errorf("oversize: err = %v", err)
 	}
@@ -261,7 +252,7 @@ func TestBuilder_JSONStateAndMessages(t *testing.T) {
 	// JSON state.
 	_, err := c.Decide().
 		WithJSONState(map[string]any{"invoice": "INV-9", "total": 42}).
-		AddNoul("ok", "q", 0.5, nil).
+		AddNoul(NoulQ{ID: "ok", Instructions: "q", Threshold: 0.5}).
 		Execute(context.Background())
 	if err != nil {
 		t.Fatalf("json state: %v", err)
@@ -274,7 +265,7 @@ func TestBuilder_JSONStateAndMessages(t *testing.T) {
 	// Messages state.
 	_, err = c.Decide().
 		WithMessages([]map[string]any{{"role": "user", "content": "hi"}}).
-		AddNoul("ok", "q", 0.5, nil).
+		AddNoul(NoulQ{ID: "ok", Instructions: "q", Threshold: 0.5}).
 		Execute(context.Background())
 	if err != nil {
 		t.Fatalf("messages state: %v", err)
@@ -290,7 +281,7 @@ func TestBuilder_RemoteErrorPropagates(t *testing.T) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write([]byte(`{"error":{"code":503,"message":"model is loading","type":"loading_error"}}`))
 	})
-	_, err := c.Decide().WithTextState("s").AddNoul("ok", "q", 0.5, nil).Execute(context.Background())
+	_, err := c.Decide().WithTextState("s").AddNoul(NoulQ{ID: "ok", Instructions: "q", Threshold: 0.5}).Execute(context.Background())
 	var api *APIError
 	if !errors.As(err, &api) {
 		t.Fatalf("err = %v, want APIError", err)
@@ -300,20 +291,22 @@ func TestBuilder_RemoteErrorPropagates(t *testing.T) {
 	}
 }
 
-func TestBuilder_MissingAnswerLeavesTargetZero(t *testing.T) {
+func TestBuilder_MissingAnswerReadsZero(t *testing.T) {
 	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"model":"m","answers":{},"usage":{"input_tokens":1,"output_tokens":0}}`))
 	})
-	var route string
-	_, err := c.Decide().
+	resp, err := c.Decide().
 		WithTextState("s").
-		AddChoice("route", "q", map[string]string{"a": "a"}, &route).
+		AddChoice(ChoiceQ{ID: "route", Instructions: "q", Options: []Option{{Key: "a"}}}).
 		Execute(context.Background())
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
-	if route != "" {
-		t.Errorf("route = %q, want zero", route)
+	if resp.Choice("route") != "" {
+		t.Errorf("Choice = %q, want zero", resp.Choice("route"))
+	}
+	if resp.Answer("route") != nil {
+		t.Error("Answer(route) should be nil")
 	}
 }

@@ -133,8 +133,8 @@ func (f *qFlags) startBuilder(c *sysone.Client) sysone.StateStep {
 
 // parseOptions parses the choice --options value "key:desc|key:desc".
 // Descriptions may be empty (sent as null on the wire).
-func parseOptions(spec string) (map[string]string, error) {
-	opts := map[string]string{}
+func parseOptions(spec string) ([]sysone.Option, error) {
+	var opts []sysone.Option
 	for _, part := range strings.Split(spec, "|") {
 		part = strings.TrimSpace(part)
 		if part == "" {
@@ -147,7 +147,7 @@ func parseOptions(spec string) (map[string]string, error) {
 		if key == "" {
 			return nil, &usageError{msg: "choice option has an empty key: " + part}
 		}
-		opts[key] = desc
+		opts = append(opts, sysone.Option{Key: key, Description: desc})
 	}
 	if len(opts) == 0 {
 		return nil, &usageError{

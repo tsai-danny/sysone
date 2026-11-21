@@ -26,7 +26,7 @@ func newNoulCmd(rs *runState) *cobra.Command {
 				return err
 			}
 			resp, err := f.applyState(f.startBuilder(c), state).
-				AddNoul("q", q, f.threshold, nil).
+				AddNoul(sysone.NoulQ{ID: "q", Instructions: q, Threshold: f.threshold}).
 				Execute(cmd.Context())
 			if err != nil {
 				return err
@@ -64,12 +64,12 @@ func newChoiceCmd(rs *runState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			var co []sysone.ChoiceOption
+			minConf := 0.0
 			if f.thresholdSet {
-				co = append(co, sysone.WithMinConfidence(f.threshold))
+				minConf = f.threshold
 			}
 			resp, err := f.applyState(f.startBuilder(c), state).
-				AddChoice("q", q, opts, nil, co...).
+				AddChoice(sysone.ChoiceQ{ID: "q", Instructions: q, Options: opts, MinConfidence: minConf}).
 				Execute(cmd.Context())
 			if err != nil {
 				return err
@@ -109,7 +109,7 @@ func newScoreCmd(rs *runState) *cobra.Command {
 				return err
 			}
 			resp, err := f.applyState(f.startBuilder(c), state).
-				AddScore("q", q, levels, nil).
+				AddScore(sysone.ScoreQ{ID: "q", Instructions: q, Levels: levels}).
 				Execute(cmd.Context())
 			if err != nil {
 				return err

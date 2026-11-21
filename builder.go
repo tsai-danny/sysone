@@ -7,13 +7,17 @@ import (
 
 // Step Builder: staged Fluent API that enforces the correct assembly order at
 // compile time — state first, then questions, then execute (the Ent-style
-// stage-interface pattern). A builder is a single-use value; do not reuse one
-// builder concurrently across goroutines.
+// stage-interface pattern). Each question is a named-field struct literal, so
+// every value at the call site carries its own label. A builder is a
+// single-use value; do not reuse one builder concurrently across goroutines.
 //
 //	client.Decide().
 //	    WithTextState("...").
-//	    AddChoice("route", "Which team?", map[string]string{"billing": "payments"}, &route).
-//	    AddNoul("angry", "Is the customer angry?", 0.8, &isAngry).
+//	    AddChoice(sysone.ChoiceQ{
+//	        ID: "route", Instructions: "Which team?",
+//	        Options: []sysone.Option{{Key: "billing", Description: "payments"}},
+//	    }).
+//	    AddNoul(sysone.NoulQ{ID: "angry", Instructions: "Is the customer angry?", Threshold: 0.8}).
 //	    Execute(ctx)
 
 // StateStep is the first builder stage: provide the state (and optionally
@@ -37,42 +41,57 @@ type StateStep interface {
 	WithImages(pathsOrDataURLs ...string) StateStep
 }
 
+// Option is one choice option: Key is the answer value returned on a pass,
+// Description helps the model judge the option (may be empty).
+type Option struct {
+	Key         string
+	Description string
+}
+
+// ChoiceQ is a multiple-choice question for [QuestionStep.AddChoice].
+type ChoiceQ struct {
+	ID           string
+	Instructions string
+	// Options are ordered and must contain at least one entry.
+	Options []Option
+	// MinConfidence requires the answer's confidence to be at least this
+	// value to pass (Passed=false below it). 0 means no minimum.
+	MinConfidence float64
+}
+
+// ScoreQ is a graded question for [QuestionStep.AddScore]. The answer is the
+// probability-weighted expected level index (fractional); read it with
+// [Response.Score].
+type ScoreQ struct {
+	ID           string
+	Instructions string
+	// Levels are 2–10 descriptions ordered lowest → highest.
+	Levels []string
+}
+
+// NoulQ is a yes/no question for [QuestionStep.AddNoul]. The answer is
+// P(true); read it with [Response.Noul].
+type NoulQ struct {
+	ID           string
+	Instructions string
+	// Threshold in (0,1] decides Passed (P(true) ≥ threshold).
+	// Values ≤ 0 use the default 0.5.
+	Threshold float64
+}
+
 // QuestionStep is the second builder stage: add questions, then Execute.
-// Execute with zero questions fails locally with ErrNoQuestions.
+// Execute with zero questions fails locally with ErrNoQuestions. Answers are
+// read from the returned [Response] (ans.Choice("route"), ans.Noul("angry"),
+// ans.Score("urgency"), ans.Answers[id].Passed).
 type QuestionStep interface {
-	// AddChoice adds a multiple-choice question. When target is non-nil it
-	// receives the winning option; it stays zero when a min-confidence
-	// threshold is not met (Passed=false).
-	AddChoice(id, instructions string, criteria map[string]string, target *string, opts ...ChoiceOption) QuestionStep
-	// AddScore adds a graded question; levels must be 2–10 descriptions
-	// ordered lowest → highest. target (optional) receives the expected
-	// level index.
-	AddScore(id, instructions string, levels []string, target *float64) QuestionStep
-	// AddNoul adds a yes/no question. threshold in (0,1] decides Passed
-	// (P(true) ≥ threshold); values ≤ 0 use the default 0.5.
-	// target (optional) receives Passed.
-	AddNoul(id, instructions string, threshold float64, target *bool) QuestionStep
-	// Execute validates locally, sends one request, and fills all bound
-	// targets. The full typed Response is returned for query access
-	// (ans.Choice("route"), ans.Noul("angry"), ans.Score("urgency"), …).
+	// AddChoice adds a multiple-choice question.
+	AddChoice(q ChoiceQ) QuestionStep
+	// AddScore adds a graded question.
+	AddScore(q ScoreQ) QuestionStep
+	// AddNoul adds a yes/no question.
+	AddNoul(q NoulQ) QuestionStep
+	// Execute validates locally, sends one request, and applies thresholds.
 	Execute(ctx context.Context) (*Response, error)
-}
-
-// ChoiceOption customises a choice question added via [QuestionStep.AddChoice].
-type ChoiceOption func(*choiceOpts)
-
-type choiceOpts struct {
-	minConfidence float64
-	hasMinConf    bool
-}
-
-// WithMinConfidence requires the answer's confidence to be at least c for the
-// answer to pass; below it, Passed=false and the bound target stays zero.
-func WithMinConfidence(c float64) ChoiceOption {
-	return func(o *choiceOpts) {
-		o.minConfidence = c
-		o.hasMinConf = true
-	}
 }
 
 // Decide starts a Step Builder chain.
@@ -82,10 +101,7 @@ func (c *Client) Decide() StateStep {
 
 type boundQuestion struct {
 	q       Question
-	kind    string // choice|score|noul
-	strTgt  *string
-	fltTgt  *float64
-	boolTgt *bool
+	kind    string  // choice|score|noul
 	thr     float64 // noul threshold (already defaulted)
 	minConf float64
 	hasMin  bool
@@ -142,48 +158,46 @@ func (b *builder) ensureQuestions() {
 	}
 }
 
-func (b *builder) AddChoice(id, instructions string, criteria map[string]string, target *string, opts ...ChoiceOption) QuestionStep {
+func (b *builder) AddChoice(q ChoiceQ) QuestionStep {
 	b.ensureQuestions()
-	co := &choiceOpts{}
-	for _, o := range opts {
-		o(co)
+	criteria := make(map[string]string, len(q.Options))
+	for _, o := range q.Options {
+		criteria[o.Key] = o.Description
 	}
-	b.questions[id] = &boundQuestion{
-		q:       Choice{QID: id, Instructions: instructions, Criteria: criteria},
+	b.questions[q.ID] = &boundQuestion{
+		q:       Choice{QID: q.ID, Instructions: q.Instructions, Criteria: criteria},
 		kind:    "choice",
-		strTgt:  target,
-		minConf: co.minConfidence,
-		hasMin:  co.hasMinConf,
+		minConf: q.MinConfidence,
+		hasMin:  q.MinConfidence > 0,
 	}
 	return b
 }
 
-func (b *builder) AddScore(id, instructions string, levels []string, target *float64) QuestionStep {
+func (b *builder) AddScore(q ScoreQ) QuestionStep {
 	b.ensureQuestions()
-	b.questions[id] = &boundQuestion{
-		q:      Score{QID: id, Instructions: instructions, Criteria: levels},
-		kind:   "score",
-		fltTgt: target,
+	b.questions[q.ID] = &boundQuestion{
+		q:    Score{QID: q.ID, Instructions: q.Instructions, Criteria: q.Levels},
+		kind: "score",
 	}
 	return b
 }
 
-func (b *builder) AddNoul(id, instructions string, threshold float64, target *bool) QuestionStep {
+func (b *builder) AddNoul(q NoulQ) QuestionStep {
 	b.ensureQuestions()
-	if threshold <= 0 {
-		threshold = defaultNoulThreshold
+	thr := q.Threshold
+	if thr <= 0 {
+		thr = defaultNoulThreshold
 	}
-	b.questions[id] = &boundQuestion{
-		q:       Noul{QID: id, Instructions: instructions},
-		kind:    "noul",
-		boolTgt: target,
-		thr:     threshold,
+	b.questions[q.ID] = &boundQuestion{
+		q:    Noul{QID: q.ID, Instructions: q.Instructions},
+		kind: "noul",
+		thr:  thr,
 	}
 	return b
 }
 
 // Execute validates locally, resolves images to data URLs, sends the request,
-// applies thresholds, and fills bound targets.
+// and applies thresholds.
 func (b *builder) Execute(ctx context.Context) (*Response, error) {
 	if len(b.questions) == 0 {
 		return nil, fmt.Errorf("%w\nHint: add at least one question with AddChoice / AddScore / AddNoul before Execute", ErrNoQuestions)
@@ -209,33 +223,21 @@ func (b *builder) Execute(ctx context.Context) (*Response, error) {
 	return resp, nil
 }
 
-// apply judges thresholds and writes bound targets.
+// apply judges thresholds: noul uses the local threshold, choice uses the
+// optional minimum confidence. Answers are read from the Response.
 func (b *builder) apply(resp *Response) {
 	for id, bq := range b.questions {
 		a := resp.Answers[id]
 		if a == nil {
-			continue // server answered no such question; leave targets zero
+			continue // server answered no such question
 		}
 		switch bq.kind {
 		case "choice":
-			passed := true
-			if bq.hasMin && a.Confidence < bq.minConf {
-				passed = false // target stays zero (zero-value + Passed=false)
-			}
-			a.Passed = passed
-			if bq.strTgt != nil && passed {
-				*bq.strTgt = a.Choice
-			}
+			a.Passed = !bq.hasMin || a.Confidence >= bq.minConf
 		case "score":
 			a.Passed = true
-			if bq.fltTgt != nil {
-				*bq.fltTgt = a.Score
-			}
 		case "noul":
 			a.Passed = a.Noul >= bq.thr
-			if bq.boolTgt != nil {
-				*bq.boolTgt = a.Passed
-			}
 		}
 	}
 }

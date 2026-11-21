@@ -40,7 +40,7 @@ func newBatchCmd(rs *runState) *cobra.Command {
 					return &usageError{cmd: cmd, msg: `--noul needs "id:instructions", got ` + spec}
 				}
 				_ = rest
-				step = step.AddNoul(id, instr, f.threshold, nil)
+				step = step.AddNoul(sysone.NoulQ{ID: id, Instructions: instr, Threshold: f.threshold})
 			}
 			for _, spec := range choices {
 				id, instr, optsSpec, ok := splitSpec(spec, 2)
@@ -51,11 +51,11 @@ func newBatchCmd(rs *runState) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				var co []sysone.ChoiceOption
+				minConf := 0.0
 				if f.thresholdSet {
-					co = append(co, sysone.WithMinConfidence(f.threshold))
+					minConf = f.threshold
 				}
-				step = step.AddChoice(id, instr, opts, nil, co...)
+				step = step.AddChoice(sysone.ChoiceQ{ID: id, Instructions: instr, Options: opts, MinConfidence: minConf})
 			}
 			for _, spec := range scores {
 				id, instr, rest, ok := splitSpec(spec, 2)
@@ -66,7 +66,7 @@ func newBatchCmd(rs *runState) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				step = step.AddScore(id, instr, levels, nil)
+				step = step.AddScore(sysone.ScoreQ{ID: id, Instructions: instr, Levels: levels})
 			}
 			resp, err := step.Execute(cmd.Context())
 			if err != nil {

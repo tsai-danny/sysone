@@ -34,23 +34,24 @@ func ExampleClient_Decide() {
 		panic(err)
 	}
 
-	var route string
-	var isAngry bool
 	resp, err := client.Decide().
 		WithTextState("Customer message: I was charged twice and I am furious!").
-		AddChoice("route", "Which team should handle this?", map[string]string{
-			"billing":   "payments, refunds, invoices",
-			"shipping":  "delivery status, tracking",
-			"technical": "bugs, errors, crashes",
-		}, &route).
-		AddNoul("angry", "Is the customer angry?", 0.8, &isAngry).
+		AddChoice(sysone.ChoiceQ{
+			ID: "route", Instructions: "Which team should handle this?",
+			Options: []sysone.Option{
+				{Key: "billing", Description: "payments, refunds, invoices"},
+				{Key: "shipping", Description: "delivery status, tracking"},
+				{Key: "technical", Description: "bugs, errors, crashes"},
+			},
+		}).
+		AddNoul(sysone.NoulQ{ID: "angry", Instructions: "Is the customer angry?", Threshold: 0.8}).
 		Execute(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("route:", route)
-	fmt.Println("angry:", isAngry)
+	fmt.Println("route:", resp.Choice("route"))
+	fmt.Println("angry:", resp.Answers["angry"].Passed)
 	fmt.Println("all passed:", resp.Passed())
 	// Output:
 	// route: billing
@@ -111,7 +112,7 @@ func ExampleResponse() {
 	client, _ := sysone.NewClient(sysone.Config{BaseURL: srv.URL + "/v1/systemone"})
 	resp, err := client.Decide().
 		WithTextState("My package has been stuck for two weeks.").
-		AddScore("urgency", "How urgent is this?", []string{"can wait", "this week", "today", "right now"}, nil).
+		AddScore(sysone.ScoreQ{ID: "urgency", Instructions: "How urgent is this?", Levels: []string{"can wait", "this week", "today", "right now"}}).
 		Execute(context.Background())
 	if err != nil {
 		panic(err)

@@ -58,9 +58,10 @@ There is no Makefile; use plain `go` commands. All commands run from the repo ro
   The CLI may use `github.com/spf13/cobra` (and nothing else without approval).
 - **Step Builder pattern**: stage interfaces (`StateStep` → `QuestionStep`) enforce
   state-first ordering at compile time. Never weaken a stage interface or merge stages;
-  new question types follow the existing `Add*` shape (id, instructions, criteria, target pointer).
-- Go methods cannot take their own type parameters — output binding uses target pointers
-  (`*bool`, `*string`, `*float64`), not generics. Keep this convention.
+  each question is a named-field struct literal (`ChoiceQ` / `ScoreQ` / `NoulQ`) passed
+  to `Add*`; answers are read from the returned `Response` (`ans.Choice(id)` etc.).
+- Go methods cannot take their own type parameters — answers are read from the
+  `Response` accessors, not bound into target pointers. Keep this convention.
 - Local validation (non-empty state, non-empty questions, score 2–10 levels, non-empty
   choice criteria) happens **before** sending the request and returns wrapped `ErrInvalidRequest`.
 - Remote errors surface as `*APIError` (OAI shape: code/message/type) usable with `errors.As`.

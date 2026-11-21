@@ -14,21 +14,25 @@
 // # Recommended flow: the Step Builder
 //
 // [Client.Decide] enforces the correct assembly order at compile time
-// (state first, then questions, then execute) and binds answers into
-// caller-provided pointers:
+// (state first, then questions, then execute). Each question is a
+// named-field struct literal; answers are read from the returned Response:
 //
 //	client, err := sysone.NewClient(sysone.Config{})
 //	if err != nil { log.Fatal(err) }
 //
-//	var route string
-//	var urgent bool
 //	ans, err := client.Decide().
 //		WithTextState("Customer message: I was charged twice for my order.").
-//		AddChoice("route", "Which team should handle this?", map[string]string{
-//			"billing": "payments, refunds", "technical": "bugs, errors",
-//		}, &route).
-//		AddNoul("urgent", "Is this urgent?", 0.8, &urgent).
+//		AddChoice(sysone.ChoiceQ{
+//			ID: "route", Instructions: "Which team should handle this?",
+//			Options: []sysone.Option{
+//				{Key: "billing", Description: "payments, refunds"},
+//				{Key: "technical", Description: "bugs, errors"},
+//			},
+//		}).
+//		AddNoul(sysone.NoulQ{ID: "urgent", Instructions: "Is this urgent?", Threshold: 0.8}).
 //		Execute(ctx)
+//	if err != nil { log.Fatal(err) }
+//	fmt.Println(ans.Choice("route"), ans.Noul("urgent") >= 0.8)
 //
 // # Escape hatch
 //
