@@ -310,3 +310,36 @@ func TestBuilder_MissingAnswerReadsZero(t *testing.T) {
 		t.Error("Answer(route) should be nil")
 	}
 }
+
+func TestBuilder_JSONEscaping(t *testing.T) {
+	var raw map[string]any
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&raw)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"model":"m","answers":{"q":{"type":"noul","noul":0.9}},"usage":{"input_tokens":1,"output_tokens":0}}`))
+	})
+
+	// Quotes, backslashes, newlines, tabs, non-ASCII: every value must
+	// survive the JSON round-trip byte-for-byte.
+	evil := "He said \"quit\"\npath C:\\tmp\\x\ttab CJK 中文 </script>"
+	_, err := c.Decide().
+		WithTextState(evil).
+		AddNoul(NoulQ{ID: "q", Instructions: evil, Threshold: 0.5}).
+		AddChoice(ChoiceQ{ID: "c", Instructions: evil, Options: []Option{{Key: "a\"b", Description: "d|e:f\ng"}}}).
+		Execute(context.Background())
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if got, _ := raw["state"].(string); got != evil {
+		t.Errorf("state corrupted:\n got %q\nwant %q", got, evil)
+	}
+	qs, _ := raw["questions"].(map[string]any)
+	if nq, _ := qs["q"].(map[string]any); nq["instructions"] != evil {
+		t.Error("noul instructions corrupted")
+	}
+	cq, _ := qs["c"].(map[string]any)
+	crit, _ := cq["criteria"].(map[string]any)
+	if crit["a\"b"] != "d|e:f\ng" {
+		t.Errorf("choice option corrupted: %v", crit)
+	}
+}
