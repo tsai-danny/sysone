@@ -64,6 +64,11 @@ sysone agent-help    # condensed machine-readable spec for AI agents
 stdout is compact JSON only; exit codes: `0` all passed, `1` below threshold,
 `2` bad arguments, `3` connection/503, `4` backend 400/501.
 
+Target a non-default server with `--url` (or `SYSTEMONE_URL`). `--model` and
+`--api-key` are **optional**: `--model` is only needed in router mode
+(multi-model server), `--api-key` only when the server was started with
+`--api-key`. A local single-model server needs neither.
+
 For AI agents, see [SKILL.md](SKILL.md) — an installable Agent skill with the
 full command/flag/exit-code contract and copy-paste examples — or run
 `sysone agent-help` for the same contract as JSON.
