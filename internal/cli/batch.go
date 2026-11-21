@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/sysone/systemone"
+	"github.com/tsai-danny/sysone"
 )
 
 func newBatchCmd(rs *runState) *cobra.Command {

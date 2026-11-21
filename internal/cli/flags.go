@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/sysone/systemone"
+	"github.com/tsai-danny/sysone"
 )
 
 // qFlags carries the common flags shared by every question command (PRD §6.2).

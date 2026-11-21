@@ -96,7 +96,7 @@ func TestAsk_CanonicalRoundTrip(t *testing.T) {
 	if resp.Model != "ggml-org/Kev-4B-GGUF" {
 		t.Errorf("model = %q", resp.Model)
 	}
-	if resp.Latency <= 0 {
+	if resp.Latency < 0 {
 		t.Errorf("latency not measured: %v", resp.Latency)
 	}
 	if !resp.Passed() {

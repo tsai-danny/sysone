@@ -1,4 +1,4 @@
-module github.com/sysone/systemone
+module github.com/tsai-danny/sysone
 
 go 1.22
 

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/sysone/systemone"
+	"github.com/tsai-danny/sysone"
 )
 
 // probeFlags carries the flags shared by the read-only probe commands.

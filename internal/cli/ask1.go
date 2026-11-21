@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/sysone/systemone"
+	"github.com/tsai-danny/sysone"
 )
 
 func newNoulCmd(rs *runState) *cobra.Command {

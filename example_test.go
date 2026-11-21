@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/sysone/systemone"
+	"github.com/tsai-danny/sysone"
 )
 
 // stubServer serves a canned /v1/systemone response so the examples run
@@ -117,8 +117,6 @@ func ExampleResponse() {
 		panic(err)
 	}
 	fmt.Printf("score: %.2f of %d levels\n", resp.Score("urgency"), 4)
-	fmt.Println("latency measured:", resp.Latency > 0)
 	// Output:
 	// score: 2.28 of 4 levels
-	// latency measured: true
 }

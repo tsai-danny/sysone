@@ -21,13 +21,13 @@ Typical uses: request routing, content moderation, gating agent steps, triage.
 ## Install
 
 ```powershell
-go install github.com/sysone/systemone/cmd/sysone@latest
+go install github.com/tsai-danny/sysone/cmd/sysone@latest
 ```
 
 Use the library:
 
 ```powershell
-go get github.com/sysone/systemone
+go get github.com/tsai-danny/sysone
 ```
 
 ## Run a backend

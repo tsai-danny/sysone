@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/sysone/systemone"
+	"github.com/tsai-danny/sysone"
 )
 
 // Exit codes ??a stable contract for scripted (agent) callers (PRD 禮6.4).

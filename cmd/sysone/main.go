@@ -9,7 +9,7 @@ package main
 import (
 	"os"
 
-	"github.com/sysone/systemone/internal/cli"
+	"github.com/tsai-danny/sysone/internal/cli"
 )
 
 func main() {
