@@ -123,7 +123,7 @@ ans, err := client.Decide().
 
 | 環境變數 | 用途 | CLI 旗標 |
 |---|---|---|
-| `SYSTEMONE_URL` | endpoint（預設 `http://localhost:8080/v1/systemone`） | `--url` |
+| `SYSTEMONE_URL` | endpoint（預設 `http://localhost:8080/v1/systemone`；可直接給伺服器根位址如 `http://host:8080`） | `--url` |
 | `SYSTEMONE_API_KEY` | Bearer token（伺服器啟用 `--api-key` 時） | `--api-key` |
 | `SYSTEMONE_MODEL` | model id（僅 router 模式） | `--model` |
 

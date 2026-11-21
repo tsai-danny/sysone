@@ -357,6 +357,26 @@ func TestNewClient_BadURL(t *testing.T) {
 	}
 }
 
+func TestNewClient_RootURLTolerance(t *testing.T) {
+	for _, in := range []string{"http://host:8080", "http://host:8080/"} {
+		c, err := NewClient(Config{BaseURL: in})
+		if err != nil {
+			t.Fatalf("NewClient(%q): %v", in, err)
+		}
+		if c.BaseURL() != "http://host:8080/v1/systemone" {
+			t.Errorf("NewClient(%q): BaseURL = %q", in, c.BaseURL())
+		}
+	}
+	// A custom path (reverse proxy) is preserved as-is.
+	c, err := NewClient(Config{BaseURL: "https://gw.example.test/proxy/sysone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.BaseURL() != "https://gw.example.test/proxy/sysone" {
+		t.Errorf("custom path: BaseURL = %q", c.BaseURL())
+	}
+}
+
 func TestConnectionFailure_HintPresent(t *testing.T) {
 	srv := httptest.NewServer(http.NotFoundHandler())
 	srv.Close() // port now closed → connection refused

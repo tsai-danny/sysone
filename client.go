@@ -31,7 +31,9 @@ const DefaultMaxImageBytes = 20 * 1 << 20
 //	APIKey  → SYSTEMONE_API_KEY
 //	Model   → SYSTEMONE_MODEL
 type Config struct {
-	// BaseURL is the full POST endpoint, e.g. http://localhost:8080/v1/sysone.
+	// BaseURL is the full POST endpoint, e.g. http://localhost:8080/v1/systemone.
+	// A bare server root (path empty or "/") is accepted and gets the standard
+	// /v1/systemone path appended.
 	BaseURL string
 	// APIKey is sent as "Authorization: Bearer <key>" when non-empty.
 	APIKey string
@@ -85,6 +87,10 @@ func NewClient(cfg Config) (*Client, error) {
 	if !strings.HasPrefix(c.cfg.BaseURL, "http://") && !strings.HasPrefix(c.cfg.BaseURL, "https://") {
 		return nil, invalid(fmt.Sprintf("BaseURL %q must start with http:// or https://", c.cfg.BaseURL),
 			"include the scheme, e.g. http://localhost:8080/v1/systemone")
+	}
+	// Tolerate a bare server root: "http://host:8080" gets the standard path.
+	if u, err := url.Parse(c.cfg.BaseURL); err == nil && (u.Path == "" || u.Path == "/") {
+		c.cfg.BaseURL = strings.TrimSuffix(c.cfg.BaseURL, "/") + "/v1/systemone"
 	}
 	return &c, nil
 }

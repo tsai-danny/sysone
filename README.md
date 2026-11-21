@@ -121,7 +121,7 @@ ans, err := client.Decide().
 
 | Env var | Purpose | CLI override |
 |---|---|---|
-| `SYSTEMONE_URL` | endpoint (default `http://localhost:8080/v1/systemone`) | `--url` |
+| `SYSTEMONE_URL` | endpoint (default `http://localhost:8080/v1/systemone`; a bare server root like `http://host:8080` is accepted) | `--url` |
 | `SYSTEMONE_API_KEY` | Bearer token (when server uses `--api-key`) | `--api-key` |
 | `SYSTEMONE_MODEL` | model id (router mode only) | `--model` |
 

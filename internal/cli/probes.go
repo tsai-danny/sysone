@@ -149,7 +149,7 @@ func agentHelpSpec() map[string]any {
 			map[string]any{"name": "props", "args": "", "summary": "GET /props; stdout {\"props\":{...},\"vision\":bool}"},
 		},
 		"flags": map[string]any{
-			"--url":       "endpoint URL (env SYSTEMONE_URL; default http://localhost:8080/v1/systemone)",
+			"--url":       "endpoint URL (env SYSTEMONE_URL; default http://localhost:8080/v1/systemone; a bare server root like http://host:8080 is accepted)",
 			"--api-key":   "bearer token (env SYSTEMONE_API_KEY; alias --key)",
 			"--model":     "model id for router mode (env SYSTEMONE_MODEL)",
 			"--state":     "state: text, @file (suffix .json parsed as JSON), or \"-\" for stdin",
