@@ -29,7 +29,9 @@ sysone/
 ## Build, Test, and Lint Commands
 
 ```powershell
-go build ./...                    # build everything
+go build ./...                    # compile check only (binaries are discarded in multi-package mode)
+go build -o bin/sysone.exe ./cmd/sysone   # produce the CLI executable
+go install ./cmd/sysone           # install CLI to GOPATH\bin
 go test ./...                     # run all tests
 go test -run TestBuilder ./...    # run a single test / package subset
 go vet ./...                      # vet (CI gate)
