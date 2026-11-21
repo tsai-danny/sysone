@@ -1,6 +1,6 @@
 ---
 name: sysone
-description: Ask a llama.cpp System One decision model typed questions (choice / score / noul) about a state, from the shell. Use when routing requests, triaging tickets, gating agent steps, scoring risk/completeness, or yes/no checks — the model returns structured answers with probabilities, not generated text.
+description: Fast probabilistic judgements for three kinds of decisions: choose the best option among several (e.g. routing, triage), rate how strongly content shows a gradable quality (e.g. risk, severity), and answer yes/no to gate an action. Use when a decision must be made about text, JSON, or images.
 ---
 
 # sysone — decision-model CLI
@@ -8,6 +8,16 @@ description: Ask a llama.cpp System One decision model typed questions (choice /
 `sysone` answers typed questions (choice / score / noul) about a *state* and
 returns structured answers with probabilities. stdout is JSON only; stderr is
 diagnostics only.
+
+**Prerequisites** — check both before asking:
+
+- A System One API endpoint is reachable (default
+  `http://localhost:8080/v1/systemone`; override with `--url` /
+  `SYSTEMONE_URL`). `sysone health` confirms.
+- You have enough information to build the request. The model sees **only**
+  the state you pass: it must contain every fact the questions depend on,
+  and each question must be answerable from the state alone. If the state
+  would be thin, gather the context first — do not ask.
 
 Discover the full contract from the CLI itself — do not guess flags:
 
