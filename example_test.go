@@ -1,4 +1,4 @@
-package systemone_test
+package sysone_test
 
 import (
 	"context"
@@ -29,7 +29,7 @@ func ExampleClient_Decide() {
 	}`)
 	defer srv.Close()
 
-	client, err := systemone.NewClient(systemone.Config{BaseURL: srv.URL + "/v1/systemone"})
+	client, err := sysone.NewClient(sysone.Config{BaseURL: srv.URL + "/v1/systemone"})
 	if err != nil {
 		panic(err)
 	}
@@ -66,13 +66,13 @@ func ExampleClient_Ask() {
 	}`)
 	defer srv.Close()
 
-	client, err := systemone.NewClient(systemone.Config{BaseURL: srv.URL + "/v1/systemone"})
+	client, err := sysone.NewClient(sysone.Config{BaseURL: srv.URL + "/v1/systemone"})
 	if err != nil {
 		panic(err)
 	}
 
-	resp, err := client.Ask(context.Background(), "Build output: 3 tests passed, 0 failed.", map[string]systemone.Question{
-		"ok": systemone.Noul{QID: "ok", Instructions: "Did the build succeed?"},
+	resp, err := client.Ask(context.Background(), "Build output: 3 tests passed, 0 failed.", map[string]sysone.Question{
+		"ok": sysone.Noul{QID: "ok", Instructions: "Did the build succeed?"},
 	})
 	if err != nil {
 		panic(err)
@@ -86,7 +86,7 @@ func ExampleClient_Health() {
 	srv := stubServer(`{"status":"ok"}`)
 	defer srv.Close()
 
-	client, err := systemone.NewClient(systemone.Config{BaseURL: srv.URL + "/v1/systemone"})
+	client, err := sysone.NewClient(sysone.Config{BaseURL: srv.URL + "/v1/systemone"})
 	if err != nil {
 		panic(err)
 	}
@@ -108,7 +108,7 @@ func ExampleResponse() {
 	}`)
 	defer srv.Close()
 
-	client, _ := systemone.NewClient(systemone.Config{BaseURL: srv.URL + "/v1/systemone"})
+	client, _ := sysone.NewClient(sysone.Config{BaseURL: srv.URL + "/v1/systemone"})
 	resp, err := client.Decide().
 		WithTextState("My package has been stuck for two weeks.").
 		AddScore("urgency", "How urgent is this?", []string{"can wait", "this week", "today", "right now"}, nil).

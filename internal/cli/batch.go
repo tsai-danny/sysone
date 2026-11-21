@@ -51,9 +51,9 @@ func newBatchCmd(rs *runState) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				var co []systemone.ChoiceOption
+				var co []sysone.ChoiceOption
 				if f.thresholdSet {
-					co = append(co, systemone.WithMinConfidence(f.threshold))
+					co = append(co, sysone.WithMinConfidence(f.threshold))
 				}
 				step = step.AddChoice(id, instr, opts, nil, co...)
 			}
@@ -138,7 +138,7 @@ func newAskCmd(rs *runState) *cobra.Command {
 //	{"route": {"type":"choice","instructions":"...","criteria":{"a":"..."}},
 //	 "ok":    {"type":"noul","instructions":"Did it work?"},
 //	 "risk":  {"type":"score","instructions":"...","criteria":["低","中","高"]}}
-func loadQuestions(rs *runState, spec string) (map[string]systemone.Question, error) {
+func loadQuestions(rs *runState, spec string) (map[string]sysone.Question, error) {
 	var raw []byte
 	switch {
 	case spec == "-":
@@ -164,7 +164,7 @@ func loadQuestions(rs *runState, spec string) (map[string]systemone.Question, er
 	if err := json.Unmarshal(raw, &wire); err != nil {
 		return nil, &usageError{msg: "questions JSON is invalid: " + err.Error()}
 	}
-	qs := make(map[string]systemone.Question, len(wire))
+	qs := make(map[string]sysone.Question, len(wire))
 	for id, w := range wire {
 		switch w.Type {
 		case "choice":
@@ -172,13 +172,13 @@ func loadQuestions(rs *runState, spec string) (map[string]systemone.Question, er
 			if err := json.Unmarshal(w.Criteria, &crit); err != nil {
 				return nil, &usageError{msg: `question "` + id + `": choice criteria must be {"option":"desc"}`}
 			}
-			qs[id] = systemone.Choice{QID: id, Instructions: w.Instructions, Criteria: crit}
+			qs[id] = sysone.Choice{QID: id, Instructions: w.Instructions, Criteria: crit}
 		case "score":
 			var crit []string
 			if err := json.Unmarshal(w.Criteria, &crit); err != nil {
 				return nil, &usageError{msg: `question "` + id + `": score criteria must be ["level",...]`}
 			}
-			qs[id] = systemone.Score{QID: id, Instructions: w.Instructions, Criteria: crit}
+			qs[id] = sysone.Score{QID: id, Instructions: w.Instructions, Criteria: crit}
 		case "noul":
 			var crit map[string]string
 			if len(w.Criteria) > 0 {
@@ -186,7 +186,7 @@ func loadQuestions(rs *runState, spec string) (map[string]systemone.Question, er
 					return nil, &usageError{msg: `question "` + id + `": noul criteria must be {"true":"...","false":"..."}`}
 				}
 			}
-			qs[id] = systemone.Noul{QID: id, Instructions: w.Instructions, Criteria: crit}
+			qs[id] = sysone.Noul{QID: id, Instructions: w.Instructions, Criteria: crit}
 		default:
 			return nil, &usageError{msg: `question "` + id + `": type must be "choice", "score" or "noul"`}
 		}

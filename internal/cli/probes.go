@@ -31,12 +31,12 @@ func (f *probeFlags) register(cmd *cobra.Command) {
 	fs.SetNormalizeFunc(normalizeKeyFlag)
 }
 
-func (f *probeFlags) client() (*systemone.Client, error) {
-	cfg := systemone.Config{BaseURL: f.url, APIKey: f.apiKey, Model: f.model}
+func (f *probeFlags) client() (*sysone.Client, error) {
+	cfg := sysone.Config{BaseURL: f.url, APIKey: f.apiKey, Model: f.model}
 	if f.timeout > 0 {
 		cfg.HTTPClient = &http.Client{Timeout: f.timeout}
 	}
-	return systemone.NewClient(cfg)
+	return sysone.NewClient(cfg)
 }
 
 func newHealthCmd(rs *runState) *cobra.Command {

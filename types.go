@@ -1,4 +1,4 @@
-package systemone
+package sysone
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 
 // Question is the interface implemented by [Choice], [Score] and [Noul].
 // Names are aligned with the official TypeSafe SDKs (Choice/Score/Noul,
-// Instructions/Criteria) and the wire JSON of POST /v1/systemone.
+// Instructions/Criteria) and the wire JSON of POST /v1/sysone.
 type Question interface {
 	// ID returns the question id used as the key in the questions map.
 	ID() string

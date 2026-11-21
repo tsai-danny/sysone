@@ -1,4 +1,4 @@
-package systemone
+package sysone
 
 import (
 	"encoding/json"
@@ -10,10 +10,10 @@ import (
 // Sentinel errors for local (pre-request) validation failures.
 var (
 	// ErrNoQuestions is returned when a request would carry no questions.
-	ErrNoQuestions = errors.New("systemone: no questions defined")
+	ErrNoQuestions = errors.New("sysone: no questions defined")
 	// ErrInvalidRequest is the sentinel for locally invalid requests
 	// (empty state, empty choice criteria, score levels outside 2–10, …).
-	ErrInvalidRequest = errors.New("systemone: invalid request")
+	ErrInvalidRequest = errors.New("sysone: invalid request")
 )
 
 // invalid builds an [ErrInvalidRequest]-wrapped error with an actionable Hint.
@@ -31,7 +31,7 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
-	return fmt.Sprintf("systemone: API error %d (%s): %s\nHint: %s",
+	return fmt.Sprintf("sysone: API error %d (%s): %s\nHint: %s",
 		e.Code, e.Type, e.Message, e.hint())
 }
 

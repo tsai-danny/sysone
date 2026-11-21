@@ -63,9 +63,9 @@ func newChoiceCmd(rs *runState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			var co []systemone.ChoiceOption
+			var co []sysone.ChoiceOption
 			if f.thresholdSet {
-				co = append(co, systemone.WithMinConfidence(f.threshold))
+				co = append(co, sysone.WithMinConfidence(f.threshold))
 			}
 			resp, err := f.applyState(f.startBuilder(c), state).
 				AddChoice("q", q, opts, nil, co...).

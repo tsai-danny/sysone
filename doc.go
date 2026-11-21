@@ -1,4 +1,4 @@
-// Package systemone is a type-safe Go client for the llama.cpp System One
+// package sysone is a type-safe Go client for the llama.cpp System One
 // decision-model API (POST /v1/systemone, TypeSafe/Jev-compatible).
 //
 // Decision models answer typed questions about a state in a single forward
@@ -17,7 +17,7 @@
 // (state first, then questions, then execute) and binds answers into
 // caller-provided pointers:
 //
-//	client, err := systemone.NewClient(systemone.Config{})
+//	client, err := sysone.NewClient(sysone.Config{})
 //	if err != nil { log.Fatal(err) }
 //
 //	var route string
@@ -45,4 +45,4 @@
 //
 // [Config] fields fall back to the environment variables SYSTEMONE_URL,
 // SYSTEMONE_API_KEY and SYSTEMONE_MODEL.
-package systemone
+package sysone

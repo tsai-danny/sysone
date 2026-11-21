@@ -1,4 +1,4 @@
-package systemone
+package sysone
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ const DefaultMaxImageBytes = 20 * 1 << 20
 //	APIKey  → SYSTEMONE_API_KEY
 //	Model   → SYSTEMONE_MODEL
 type Config struct {
-	// BaseURL is the full POST endpoint, e.g. http://localhost:8080/v1/systemone.
+	// BaseURL is the full POST endpoint, e.g. http://localhost:8080/v1/sysone.
 	BaseURL string
 	// APIKey is sent as "Authorization: Bearer <key>" when non-empty.
 	APIKey string
@@ -128,13 +128,13 @@ func (c *Client) newRequest(ctx context.Context, method, u string, body []byte) 
 func (c *Client) do(req *http.Request) ([]byte, error) {
 	resp, err := c.cfg.HTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("systemone: request to %s failed: %w\nHint: is llama-server running? start it with `llama serve -hf ggml-org/Julia-1-GGUF`, check --url / SYSTEMONE_URL, and try `sysone health`",
+		return nil, fmt.Errorf("sysone: request to %s failed: %w\nHint: is llama-server running? start it with `llama serve -hf ggml-org/Julia-1-GGUF`, check --url / SYSTEMONE_URL, and try `sysone health`",
 			req.URL, redactTransportErr(err))
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 64<<20))
 	if err != nil {
-		return nil, fmt.Errorf("systemone: reading response from %s: %w\nHint: the server closed the connection early — check server logs",
+		return nil, fmt.Errorf("sysone: reading response from %s: %w\nHint: the server closed the connection early — check server logs",
 			req.URL, err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
@@ -197,7 +197,7 @@ func (c *Client) ask(ctx context.Context, model string, state any, images []stri
 	}
 	var wire wireResponse
 	if err := json.Unmarshal(respBody, &wire); err != nil {
-		return nil, fmt.Errorf("systemone: decoding response: %w\nHint: the server returned a non-JSON body — verify the endpoint is llama.cpp /v1/systemone", err)
+		return nil, fmt.Errorf("sysone: decoding response: %w\nHint: the server returned a non-JSON body — verify the endpoint is llama.cpp /v1/systemone", err)
 	}
 	return wire.toResponse(time.Since(start)), nil
 }
@@ -248,7 +248,7 @@ func (c *Client) Models(ctx context.Context) ([]Model, error) {
 		Data   []Model `json:"data"`
 	}
 	if err := json.Unmarshal(body, &env); err != nil {
-		return nil, fmt.Errorf("systemone: decoding /v1/models: %w\nHint: verify the endpoint is a llama.cpp server", err)
+		return nil, fmt.Errorf("sysone: decoding /v1/models: %w\nHint: verify the endpoint is a llama.cpp server", err)
 	}
 	return env.Data, nil
 }
@@ -266,7 +266,7 @@ func (c *Client) Props(ctx context.Context) (*Props, error) {
 	}
 	p := Props{}
 	if err := json.Unmarshal(body, &p); err != nil {
-		return nil, fmt.Errorf("systemone: decoding /props: %w\nHint: verify the endpoint is a llama.cpp server", err)
+		return nil, fmt.Errorf("sysone: decoding /props: %w\nHint: verify the endpoint is a llama.cpp server", err)
 	}
 	return &p, nil
 }

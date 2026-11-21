@@ -1,5 +1,5 @@
 // Package cli implements the sysone command-line interface: thin cobra
-// wrappers over the systemone module with a stable machine-readable output
+// wrappers over the sysone module with a stable machine-readable output
 // contract (JSON on stdout, diagnostics on stderr, fixed exit codes).
 package cli
 
@@ -88,14 +88,14 @@ func execute(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 // exitCodeForError maps a runtime error to its contract exit code.
 func exitCodeForError(err error) int {
-	var ae *systemone.APIError
+	var ae *sysone.APIError
 	if errors.As(err, &ae) {
 		if ae.IsContract() {
 			return ExitContract
 		}
 		return ExitTransport // 503 loading and all other server errors
 	}
-	if errors.Is(err, systemone.ErrInvalidRequest) || errors.Is(err, systemone.ErrNoQuestions) {
+	if errors.Is(err, sysone.ErrInvalidRequest) || errors.Is(err, sysone.ErrNoQuestions) {
 		return ExitContract
 	}
 	return ExitTransport
@@ -154,7 +154,7 @@ func emitJSON(w io.Writer, v any, pretty bool) error {
 
 // envelope builds the stable question-command output:
 // {"model":...,"answers":{id:{...}},"usage":{...},"latency_ms":N}.
-func envelope(resp *systemone.Response) map[string]any {
+func envelope(resp *sysone.Response) map[string]any {
 	answers := make(map[string]any, len(resp.Answers))
 	for id, a := range resp.Answers {
 		answers[id] = answerJSON(a)
@@ -169,7 +169,7 @@ func envelope(resp *systemone.Response) map[string]any {
 
 // answerJSON serialises one answer with the core Answer field names,
 // including only the fields meaningful for its type.
-func answerJSON(a *systemone.Answer) map[string]any {
+func answerJSON(a *sysone.Answer) map[string]any {
 	m := map[string]any{"id": a.ID, "type": a.Type, "passed": a.Passed}
 	switch a.Type {
 	case "choice":
@@ -188,7 +188,7 @@ func answerJSON(a *systemone.Answer) map[string]any {
 }
 
 // quietValue renders the bare answer value for --quiet shell piping.
-func quietValue(a *systemone.Answer) string {
+func quietValue(a *sysone.Answer) string {
 	switch a.Type {
 	case "choice":
 		return a.Choice
@@ -199,7 +199,7 @@ func quietValue(a *systemone.Answer) string {
 	}
 }
 
-func sortedIDs(resp *systemone.Response) []string {
+func sortedIDs(resp *sysone.Response) []string {
 	ids := make([]string, 0, len(resp.Answers))
 	for id := range resp.Answers {
 		ids = append(ids, id)
@@ -211,7 +211,7 @@ func sortedIDs(resp *systemone.Response) []string {
 // finish writes the response (JSON envelope, or bare values when quiet) and
 // records the exit code from the passed judgement. single prints one bare
 // value without the id prefix under --quiet.
-func finish(rs *runState, f *qFlags, resp *systemone.Response, single bool) error {
+func finish(rs *runState, f *qFlags, resp *sysone.Response, single bool) error {
 	if f.quiet {
 		ids := sortedIDs(resp)
 		for _, id := range ids {

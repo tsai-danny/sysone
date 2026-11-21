@@ -53,12 +53,12 @@ func normalizeKeyFlag(_ *pflag.FlagSet, name string) pflag.NormalizedName {
 }
 
 // client builds the module client from the flags (env fallback lives in the core).
-func (f *qFlags) client() (*systemone.Client, error) {
-	cfg := systemone.Config{BaseURL: f.url, APIKey: f.apiKey, Model: f.model}
+func (f *qFlags) client() (*sysone.Client, error) {
+	cfg := sysone.Config{BaseURL: f.url, APIKey: f.apiKey, Model: f.model}
 	if f.timeout > 0 {
 		cfg.HTTPClient = &http.Client{Timeout: f.timeout}
 	}
-	return systemone.NewClient(cfg)
+	return sysone.NewClient(cfg)
 }
 
 // markThreshold records explicit --threshold usage after flag parsing.
@@ -100,7 +100,7 @@ func (f *qFlags) resolveState(rs *runState) (any, error) {
 }
 
 // applyState sets the state on a builder chain (JSON values keep structure).
-func (f *qFlags) applyState(step systemone.StateStep, state any) systemone.QuestionStep {
+func (f *qFlags) applyState(step sysone.StateStep, state any) sysone.QuestionStep {
 	if s, ok := state.(string); ok {
 		return step.WithTextState(s)
 	}
@@ -108,7 +108,7 @@ func (f *qFlags) applyState(step systemone.StateStep, state any) systemone.Quest
 }
 
 // startBuilder returns the state stage with images attached.
-func (f *qFlags) startBuilder(c *systemone.Client) systemone.StateStep {
+func (f *qFlags) startBuilder(c *sysone.Client) sysone.StateStep {
 	step := c.Decide()
 	if len(f.images) > 0 {
 		step = step.WithImages(f.images...)

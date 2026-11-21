@@ -113,7 +113,7 @@ Prefer the Step Builder — it enforces state → questions → execute at compi
 time and binds answers into your variables:
 
 ```go
-client, _ := systemone.NewClient(systemone.Config{})
+client, _ := sysone.NewClient(sysone.Config{})
 var route string
 var urgent bool
 ans, err := client.Decide().

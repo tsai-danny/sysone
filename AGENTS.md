@@ -7,7 +7,7 @@ This file provides guidance to AI coding agents when working with code in this r
 `sysone` is a Go workspace implementing a type-safe client module and CLI for the llama.cpp
 **System One decision-model API** (`POST /v1/systemone`, TypeSafe/Jev-compatible).
 
-- **Go module `systemone`** — stdlib-only client library with a staged Step Builder API
+- **Go module `sysone`** (`github.com/tsai-danny/sysone`) — stdlib-only client library with a staged Step Builder API
 - **CLI `sysone`** — agent-friendly command-line tool built on the module (cobra is the only external dependency)
 
 The authoritative API contract lives in `M:\golang\systemone-chat\docs\systemone_api.md`
@@ -18,8 +18,8 @@ changing request/response handling.
 
 ```
 sysone/
-  go.mod                  module github.com/<org>/systemone (Go >= 1.22)
-  *.go                    client, step builder, contract types, errors (package systemone)
+  go.mod                  module github.com/tsai-danny/sysone (Go >= 1.22)
+  *.go                    client, step builder, contract types, errors (package sysone)
   cmd/sysone/             CLI entrypoint (cobra)
   internal/cli/           CLI command implementations (thin wrappers over the module)
   testdata/               httptest fixtures mirroring systemone_api.md examples

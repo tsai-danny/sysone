@@ -89,7 +89,7 @@ Pick `--threshold` by how you act on the answer:
 ## Library quick start
 
 ```go
-client, _ := systemone.NewClient(systemone.Config{})
+client, _ := sysone.NewClient(sysone.Config{})
 
 var route string
 var urgent bool
