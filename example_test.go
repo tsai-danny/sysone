@@ -1,0 +1,124 @@
+package systemone_test
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+
+	"github.com/sysone/systemone"
+)
+
+// stubServer serves a canned /v1/systemone response so the examples run
+// without a live llama.cpp server.
+func stubServer(body string) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, body)
+	}))
+}
+
+func ExampleClient_Decide() {
+	srv := stubServer(`{
+	  "model": "ggml-org/Kev-4B-GGUF",
+	  "answers": {
+	    "route":  {"type":"choice","choice":"billing","probabilities":{"billing":0.90,"shipping":0.03,"technical":0.07},"confidence":0.86},
+	    "angry":  {"type":"noul","noul":0.82}
+	  },
+	  "usage": {"input_tokens":130,"output_tokens":0}
+	}`)
+	defer srv.Close()
+
+	client, err := systemone.NewClient(systemone.Config{BaseURL: srv.URL + "/v1/systemone"})
+	if err != nil {
+		panic(err)
+	}
+
+	var route string
+	var isAngry bool
+	resp, err := client.Decide().
+		WithTextState("Customer message: I was charged twice and I am furious!").
+		AddChoice("route", "Which team should handle this?", map[string]string{
+			"billing":   "payments, refunds, invoices",
+			"shipping":  "delivery status, tracking",
+			"technical": "bugs, errors, crashes",
+		}, &route).
+		AddNoul("angry", "Is the customer angry?", 0.8, &isAngry).
+		Execute(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("route:", route)
+	fmt.Println("angry:", isAngry)
+	fmt.Println("all passed:", resp.Passed())
+	// Output:
+	// route: billing
+	// angry: true
+	// all passed: true
+}
+
+func ExampleClient_Ask() {
+	srv := stubServer(`{
+	  "model": "ggml-org/Kev-4B-GGUF",
+	  "answers": {"ok": {"type":"noul","noul":0.91}},
+	  "usage": {"input_tokens":40,"output_tokens":0}
+	}`)
+	defer srv.Close()
+
+	client, err := systemone.NewClient(systemone.Config{BaseURL: srv.URL + "/v1/systemone"})
+	if err != nil {
+		panic(err)
+	}
+
+	resp, err := client.Ask(context.Background(), "Build output: 3 tests passed, 0 failed.", map[string]systemone.Question{
+		"ok": systemone.Noul{QID: "ok", Instructions: "Did the build succeed?"},
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("ok:", resp.Noul("ok") >= 0.5)
+	// Output:
+	// ok: true
+}
+
+func ExampleClient_Health() {
+	srv := stubServer(`{"status":"ok"}`)
+	defer srv.Close()
+
+	client, err := systemone.NewClient(systemone.Config{BaseURL: srv.URL + "/v1/systemone"})
+	if err != nil {
+		panic(err)
+	}
+	if err := client.Health(context.Background()); err != nil {
+		panic(err)
+	}
+	fmt.Println("healthy")
+	// Output:
+	// healthy
+}
+
+func ExampleResponse() {
+	srv := stubServer(`{
+	  "model": "ggml-org/Kev-4B-GGUF",
+	  "answers": {
+	    "urgency": {"type":"score","score":2.28,"legend":{"0":"can wait","1":"this week","2":"today","3":"right now"},"probabilities":{"0":0.04,"1":0.19,"2":0.22,"3":0.55},"confidence":0.28}
+	  },
+	  "usage": {"input_tokens":100,"output_tokens":0}
+	}`)
+	defer srv.Close()
+
+	client, _ := systemone.NewClient(systemone.Config{BaseURL: srv.URL + "/v1/systemone"})
+	resp, err := client.Decide().
+		WithTextState("My package has been stuck for two weeks.").
+		AddScore("urgency", "How urgent is this?", []string{"can wait", "this week", "today", "right now"}, nil).
+		Execute(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("score: %.2f of %d levels\n", resp.Score("urgency"), 4)
+	fmt.Println("latency measured:", resp.Latency > 0)
+	// Output:
+	// score: 2.28 of 4 levels
+	// latency measured: true
+}

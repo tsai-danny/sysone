@@ -21,13 +21,13 @@ Typical uses: request routing, content moderation, gating agent steps, triage.
 ## Install
 
 ```powershell
-go install github.com/<org>/sysone/cmd/sysone@latest
+go install github.com/sysone/systemone/cmd/sysone@latest
 ```
 
 Use the library:
 
 ```powershell
-go get github.com/<org>/systemone
+go get github.com/sysone/systemone
 ```
 
 ## Run a backend
@@ -63,6 +63,23 @@ sysone agent-help    # condensed machine-readable spec for AI agents
 
 stdout is compact JSON only; exit codes: `0` all passed, `1` below threshold,
 `2` bad arguments, `3` connection/503, `4` backend 400/501.
+
+For AI agents, see [SKILL.md](SKILL.md) — an installable Agent skill with the
+full command/flag/exit-code contract and copy-paste examples — or run
+`sysone agent-help` for the same contract as JSON.
+
+### Threshold guidance (TypeSafe patterns)
+
+Pick `--threshold` by how you act on the answer:
+
+- **confidence-routing** (choice): set `--threshold` to the confidence below
+  which you refuse to auto-route; exit `1` means "fall back to a human/default
+  queue". Typical 0.6–0.8.
+- **companion-noul**: guard a choice with a safety noul in the same `batch`
+  (e.g. "Is this refund within policy?") and act only when both pass.
+- **noul-screen** (yes/no gate): high-stakes "act?" checks use 0.8–0.9 so
+  exit `0` means "clearly yes"; treat exit `1` as "no / ask". The 0.5 default
+  is fine for soft signals.
 
 ## Library quick start
 
