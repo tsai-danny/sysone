@@ -1,5 +1,7 @@
 # sysone
 
+[繁體中文](./README_tw.md)
+
 Type-safe Go client module and agent-friendly CLI for the llama.cpp
 **System One decision-model API** (`POST /v1/systemone`, TypeSafe/Jev-compatible).
 
