@@ -1,6 +1,6 @@
 ---
 name: sysone
-description: Fast probabilistic judgements for three kinds of decisions: choose the best option among several (e.g. routing, triage), rate how strongly content shows a gradable quality (e.g. risk, severity), and answer yes/no to gate an action. Use when a decision must be made about text, JSON, or images.
+description: Fast probabilistic judgements for three kinds of decisions: choose the best option among several, rate how strongly content shows a gradable quality, and answer yes/no to gate an action. Use when a decision must be made about text, JSON, or images.
 ---
 
 # sysone — decision-model CLI
@@ -9,15 +9,10 @@ description: Fast probabilistic judgements for three kinds of decisions: choose 
 returns structured answers with probabilities. stdout is JSON only; stderr is
 diagnostics only.
 
-**Prerequisites** — check both before asking:
-
-- A System One API endpoint is reachable (default
-  `http://localhost:8080/v1/systemone`; override with `--url` /
-  `SYSTEMONE_URL`). `sysone health` confirms.
-- You have enough information to build the request. The model sees **only**
-  the state you pass: it must contain every fact the questions depend on,
-  and each question must be answerable from the state alone. If the state
-  would be thin, gather the context first — do not ask.
+The model sees **only** the state you pass: it must contain every fact the
+questions depend on, and each question must be answerable from the state
+alone. If the state would be thin, gather the context first — do not ask.
+Endpoint: `--url http://localhost:8080/v1/systemone`
 
 Discover the full contract from the CLI itself — do not guess flags:
 
