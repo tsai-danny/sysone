@@ -44,6 +44,21 @@ func (f *qFlags) register(cmd *cobra.Command) {
 	fs.SetNormalizeFunc(normalizeKeyFlag)
 }
 
+// markRequired declares the flags a command cannot run without. Cobra
+// rejects the invocation before RunE when one is missing (execute() maps
+// that error to ExitUsage) and we append "[required]" to the usage text so
+// --help shows it (pflag does not render the annotation itself). Runtime
+// validators (requireQ, resolveState, ...) stay as the second line of
+// defense for flags that are present but empty.
+func markRequired(cmd *cobra.Command, names ...string) {
+	for _, n := range names {
+		if f := cmd.Flags().Lookup(n); f != nil {
+			f.Usage = f.Usage + " [required]"
+		}
+		_ = cmd.MarkFlagRequired(n)
+	}
+}
+
 // normalizeKeyFlag accepts --key as a shorthand for --api-key.
 func normalizeKeyFlag(_ *pflag.FlagSet, name string) pflag.NormalizedName {
 	if name == "key" {

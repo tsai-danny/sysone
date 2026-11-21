@@ -245,6 +245,18 @@ func TestUsageErrors(t *testing.T) {
 	}
 }
 
+func TestRequiredFlags(t *testing.T) {
+	// Help marks mandatory flags, and missing ones report the flag name with exit 2.
+	code, stdout, _ := run(t, []string{"noul", "--help"}, "")
+	if code != ExitOK || !strings.Contains(stdout, "[required]") {
+		t.Fatalf("noul --help: exit = %d, help missing [required]:\n%s", code, stdout)
+	}
+	code, _, stderr := run(t, []string{"noul", "--url", "http://127.0.0.1:1/v1/systemone"}, "")
+	if code != ExitUsage || !strings.Contains(stderr, `"state"`) || !strings.Contains(stderr, `"q"`) {
+		t.Errorf("missing flags: exit = %d, stderr = %q", code, stderr)
+	}
+}
+
 func TestExitCode_Transport_503(t *testing.T) {
 	srv, _ := newTestServer(t, func(w http.ResponseWriter) {
 		w.WriteHeader(http.StatusServiceUnavailable)

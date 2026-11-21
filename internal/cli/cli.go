@@ -76,8 +76,10 @@ func execute(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		return ExitUsage
 	}
-	// Cobra's own command-resolution errors (unknown command, extra args).
-	if strings.HasPrefix(err.Error(), "unknown command") {
+	// Cobra's own command-resolution errors (unknown command, extra args)
+	// and required-flag validation (MarkFlagRequired).
+	if strings.HasPrefix(err.Error(), "unknown command") ||
+		strings.HasPrefix(err.Error(), "required flag") {
 		fmt.Fprintf(stderr, "sysone: %s\n", err)
 		fmt.Fprint(stderr, root.UsageString())
 		return ExitUsage

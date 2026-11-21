@@ -67,6 +67,11 @@ sysone props     # {"props":{...},"vision":bool}
 
 ## Common flags
 
+Required per command (help shows `[required]`; missing → exit 2): `noul`
+and `score` need `--state --q`; `choice` adds `--options`; `batch` needs
+`--state` plus at least one question flag; `ask` needs `--state
+--questions`. All other flags are optional.
+
 | flag | meaning |
 |---|---|
 | `--url` | endpoint (env `SYSTEMONE_URL`; default `http://localhost:8080/v1/systemone`) |

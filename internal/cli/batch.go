@@ -79,6 +79,7 @@ func newBatchCmd(rs *runState) *cobra.Command {
 	cmd.Flags().StringArrayVar(&nouls, "noul", nil, `noul question "id:instructions" (repeatable)`)
 	cmd.Flags().StringArrayVar(&choices, "choice", nil, `choice question "id:instructions:opt1:desc|opt2:desc" (repeatable)`)
 	cmd.Flags().StringArrayVar(&scores, "score", nil, `score question "id:instructions:level1:level2:..." (repeatable)`)
+	markRequired(cmd, "state")
 	return cmd
 }
 
@@ -130,6 +131,7 @@ func newAskCmd(rs *runState) *cobra.Command {
 	}
 	f.register(cmd)
 	cmd.Flags().StringVar(&questionsFile, "questions", "", `questions JSON: @file, "-" for stdin, or inline JSON`)
+	markRequired(cmd, "state", "questions")
 	return cmd
 }
 

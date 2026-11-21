@@ -69,6 +69,11 @@ Target a non-default server with `--url` (or `SYSTEMONE_URL`). `--model` and
 (multi-model server), `--api-key` only when the server was started with
 `--api-key`. A local single-model server needs neither.
 
+Each question command marks its mandatory flags `[required]` in `--help`
+(missing → exit `2`): `noul`/`score` need `--state --q`; `choice` adds
+`--options`; `batch` needs `--state` plus at least one question flag;
+`ask` needs `--state --questions`. Everything else is optional.
+
 For AI agents, see [SKILL.md](SKILL.md) — an installable Agent skill with the
 full command/flag/exit-code contract and copy-paste examples — or run
 `sysone agent-help` for the same contract as JSON.
