@@ -9,9 +9,10 @@ description: Fast probabilistic judgements for three kinds of decisions: choose 
 returns structured answers with probabilities. stdout is JSON only; stderr is
 diagnostics only.
 
-The model sees **only** the state you pass: it must contain every fact the
-questions depend on, and each question must be answerable from the state
-alone. If the state would be thin, gather the context first — do not ask.
+Answers derive **only** from the content you submit: the state must contain
+every fact the questions depend on, and each question must be answerable
+from the state alone. If the state would be thin, gather the context
+first — do not ask.
 Endpoint: `--url http://localhost:8080/v1/systemone`
 
 Discover the full contract from the CLI itself — do not guess flags:
