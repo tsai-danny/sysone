@@ -106,8 +106,13 @@ ans, err := client.Decide().
         },
     }).
     AddNoul(sysone.NoulQ{ID: "urgent", Instructions: "Is this urgent?", Threshold: 0.8}).
+    AddScore(sysone.ScoreQ{
+        ID: "severity", Instructions: "How severe is this?",
+        Levels: []string{"minor", "moderate", "major", "critical"}, // low → high, 2–10
+    }).
     Execute(ctx)
-// answers: ans.Choice("route"), ans.Noul("urgent"), ans.Answers["urgent"].Passed
+// answers: ans.Choice("route"), ans.Noul("urgent"), ans.Score("severity"),
+//          ans.Answers["urgent"].Passed
 ```
 
 ## Configuration
